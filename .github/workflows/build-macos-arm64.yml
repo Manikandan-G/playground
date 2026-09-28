@@ -1,0 +1,39 @@
+name: Build macOS Apple Silicon
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # macos-14 and later run on Apple Silicon by default
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install Nuitka
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Build with Nuitka
+        # Nuitka uses a C compiler under the hood to compile python to C, then to an executable
+        run: |
+          python -m nuitka --onefile main.py
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64-executable
+          # By default, Nuitka outputs a .bin file for single-file executables on macOS/Linux
+          path: main.bin
